@@ -1,4 +1,10 @@
 {
+  "engines": {
+    "node": "0.10.26"
+  },
+  "scripts": {
+    "start": "lsc app.ls"
+  },
   "dependencies": {
     "LiveScript": "^1.2.0",
     "cheerio": "^0.17.0",
