@@ -39,6 +39,29 @@ Api.route '/category/:id'
         #total-pages: pages
         results-per-page: items.length
 
+Api.route '/article'
+  .get (req, res) ->
+    {page = 1} = req.query
+    error, response, body <- request "#{origin}/?paged=#{page}"
+    items = parseLists body
+    res.json do
+      is-success: true
+      error-code: 0
+      error-message: null
+      data: items
+      page-info:
+        results-per-page: items.length
+
+Api.route '/article/:id'
+  .get (req, res) ->
+    id = req.param 'id'
+    error, response, body <- request "#{origin}/?p=#{id}"
+    res.json do
+      is-success: true
+      error-code: 0
+      error-message: null
+      data: parseArticle body
+
 parseMenu = (body) ->
   $ = cheerio.load body
 
@@ -54,7 +77,7 @@ parseLists = (body) ->
 
   $ = cheerio.load body
 
-  items = $ '.masonry__item' .map (,it) ->
+  items = $ 'article.post' .map (,it) ->
     do
       link: $ '.article--grid__header', it .children!attr 'href'
       title: $ '.article__title', it .text!trim!
@@ -64,5 +87,17 @@ parseLists = (body) ->
       comments: ~~$ '.xpost_comments', it .text!
       likes: ~~$ '.xpost_likes', it .text!
   items .= to-array!
+
+parseArticle = (body) ->
+  $ = cheerio.load body
+  it = $ 'article.post-article' .0
+  do
+    link: $ 'link[rel="canonical"]' .attr 'href'
+    title: $ '.article__title', it .text!trim!
+    featured: $ '.article__featured-image > .image-wrap > img', it .data 'src'
+    content: $ 'p', it .get!map -> $ it .text!trim!
+    createdAt: $ '.article__time', it .text!
+    likes: ~~$ '.likes-count', it .text!
+    category: $ '.btn--tertiary' .get!map -> ~~$ it .attr 'href' .replace /http.*cat=/, ''
 
 module.exports = Api
